@@ -86,7 +86,7 @@ Migrasi di Django adalah proses menyamakan struktur database dengan model yang d
 
 Soal 3: Menurut Anda, dari semua framework yang ada, mengapa framework Django dijadikan permulaan pembelajaran pengembangan perangkat lunak?
 
-Django dipilih sebagai permulaan pembelajaran pengembangan perangkat lunak karena lengkap, terstruktur, dan ramah pemula. Framework ini sudah menyediakan banyak fitur bawaan sehingga pemula bisa langsung fokus pada logika aplikasi. Ditambah lagi, Django berbasis Python yang sintaksnya sudah dipelajari sebelumnya, sehingga memudahkan proses belajar dan membiasakan dengan praktik pengembangan perangkat lunak yang baik sejak awal.
+Django dipilih sebagai permulaan pembelajaran pengembangan perangkat lunak karena lengkap, terstruktur, dan ramah pemula. Framework ini sudah menyediakan banyak fitur bawaan sehingga pemula bisa langsung fokus pada logika aplikasi. Ditambah lagi, Django berbasis Python yang sintaksnya sudah dipelajari sebelumnya, sehingga memudahkan proses belajar.
 
 
 
