@@ -81,8 +81,6 @@ Deployment adalah proses membawa aplikasi dari development ke production environ
 
 Soal 2: Bagaimana cara kerja migrasi database di Django?
 
-ChatGPT bilang:
-
 Migrasi di Django adalah proses menyamakan struktur database dengan model yang didefinisikan di models.py. Setiap kali ada perubahan model, Django akan membuat file migrasi dengan perintah python manage.py makemigrations, lalu perubahan tersebut diterapkan ke database melalui python manage.py migrate. Dengan cara ini, developer tidak perlu menulis SQL manual karena Django otomatis mengelola perubahan skema, menyimpan riwayat migrasi, serta memastikan database selalu konsisten dengan model aplikasi.
 
 
