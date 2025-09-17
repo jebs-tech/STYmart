@@ -8,6 +8,10 @@ class Product(models.Model):
     name = models.CharField(max_length=255)
     price = models.IntegerField()
     description = models.TextField()
+    stock = models.IntegerField(default=0)
+    color = models.CharField(max_length=50, blank=True)
+    size = models.CharField(max_length=50, blank=True)
+
     thumbnail = models.URLField(blank=True, null=True)
     category = models.CharField(max_length=100)
     is_featured = models.BooleanField(default=False)
