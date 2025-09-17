@@ -3,10 +3,45 @@
 {% block content %}
 <h1>Add Product</h1>
 
-<form method="POST">
+<form method="POST" enctype="multipart/form-data">
   {% csrf_token %}
   <table>
-    {{ form.as_table }}
+    <tr>
+      <td>{{ form.name.label_tag }}</td>
+      <td>{{ form.name }}</td>
+    </tr>
+    <tr>
+      <td>{{ form.category.label_tag }}</td>
+      <td>{{ form.category }}</td>
+    </tr>
+    <tr>
+      <td>{{ form.price.label_tag }}</td>
+      <td>{{ form.price }}</td>
+    </tr>
+    <tr>
+      <td>{{ form.stock.label_tag }}</td>
+      <td>{{ form.stock }}</td>
+    </tr>
+    <tr>
+      <td>{{ form.color.label_tag }}</td>
+      <td>{{ form.color }}</td>
+    </tr>
+    <tr>
+      <td>{{ form.size.label_tag }}</td>
+      <td>{{ form.size }}</td>
+    </tr>
+    <tr>
+      <td>{{ form.thumbnail.label_tag }}</td>
+      <td>{{ form.thumbnail }}</td>
+    </tr>
+    <tr>
+      <td>{{ form.description.label_tag }}</td>
+      <td>{{ form.description }}</td>
+    </tr>
+    <tr>
+      <td>{{ form.is_featured.label_tag }}</td>
+      <td>{{ form.is_featured }}</td>
+    </tr>
     <tr>
       <td></td>
       <td>
