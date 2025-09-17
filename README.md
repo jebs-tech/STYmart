@@ -99,4 +99,69 @@ Soal 5: Menurut Anda, dari semua framework yang ada, mengapa framework Django di
 Django dipilih sebagai permulaan pembelajaran pengembangan perangkat lunak karena lengkap, terstruktur, dan ramah pemula. Framework ini sudah menyediakan banyak fitur bawaan sehingga pemula bisa langsung fokus pada logika aplikasi. Ditambah lagi, Django berbasis Python yang sintaksnya sudah dipelajari sebelumnya, sehingga memudahkan proses belajar.
 
 
+TUGAS 3:
 
+1. Mengapa Kita Memerlukan Data Delivery dalam Platform?
+Data delivery dibutuhkan untuk memastikan komunikasi antar komponen platform berjalan lancar, misalnya antara frontend, backend, dan database. Dengan mekanisme ini, data dapat dikirim secara real-time tanpa perlu memuat ulang seluruh halaman, sehingga efisien dan mendukung skalabilitas. Contoh sederhana adalah fitur "like" di media sosial yang langsung memperbarui jumlah like tanpa refresh halaman.
+
+2. Perbandingan XML vs JSON
+JSON lebih banyak digunakan dibanding XML karena strukturnya sederhana, ringan, mudah dibaca, dan diproses lebih cepat, terutama di JavaScript yang memiliki dukungan bawaan untuk JSON. Sebagai contoh, representasi data dengan JSON lebih ringkas daripada XML sehingga mempermudah pengembangan aplikasi modern.
+
+3. Fungsi Method is_valid() pada Form Django
+Method is_valid() berfungsi untuk memvalidasi data input pengguna berdasarkan aturan yang ditentukan. Jika data valid, proses dapat dilanjutkan (misalnya menyimpan ke database), sedangkan jika tidak valid, Django akan memberikan pesan error. Hal ini penting untuk menjaga kualitas, keamanan, dan kejelasan interaksi pengguna dengan sistem.
+
+4. Pentingnya CSRF Token dalam Django
+CSRF token digunakan untuk melindungi aplikasi dari serangan Cross-Site Request Forgery. Tanpa token ini, penyerang dapat membuat halaman palsu yang mengirim request ke server seolah-olah dari pengguna yang sah, sehingga tindakan berbahaya seperti transfer uang, penggantian password, atau penghapusan data bisa terjadi tanpa sepengetahuan pengguna.
+
+5. Jelaskan bagaimana cara kamu mengimplementasikan checklist di atas secara step-by-step (bukan hanya sekadar mengikuti tutorial).
+
+- Persiapan kerangka (skeleton template)
+Buat folder templates/ di root project dan base.html dengan block {% block content %}. Pastikan settings.py menunjuk ke direktori template dan gunakan {% extends 'base.html' %} pada semua template agar tampilan konsisten.
+
+- Model dan form produk
+Definisikan Product model dengan field utama seperti name, price, description, stock,color, size category dan method bantu (is_available()). Buat ProductForm sebagai ModelForm hanya dengan fields yang diperlukan untuk input pengguna.
+
+- Tamppilan views
+Implementasikan view untuk daftar, buat, lihat detail, serta endpoint data (XML/JSON). Contoh fungsi utama:
+
+def show_main(request)
+def create_product(request)
+def show_product(request, id)
+def show_xml(request)
+def show_json(request)
+def show_xml_by_id(request, id)
+def show_json_by_id(request, id)
+
+- Menambahkan method baru seperti Delete yang memiliki fungsi untuk menghapus product
+
+
+- Konfigurasi URL routing
+Rancang pola URL yang konsisten, misalnya:
+
+urlpatterns = [
+    path('', show_main, name='show_main'),
+    path('create-product/', create_product, name='create_product'),
+    path('product/<str:id>/', show_product, name='show_product'),
+    path('xml/', show_xml, name='show_xml'),
+    path('json/', show_json, name='show_json'),
+    path('xml/<str:id>/', show_xml_by_id, name='show_xml_by_id'),
+    path('json/<str:id>/', show_json_by_id, name='show_json_by_id'),
+]
+
+
+- Template HTML dan keamanan form
+Siapkan main.html, create_product.html, dan product_detail.html. Pastikan setiap form menyertakan {% csrf_token %} dan menampilkan pesan error bila form.is_valid() mengembalikan False sebelum menyimpan data.
+
+- Implementasi data delivery (XML & JSON)
+Gunakan serializers.serialize() atau Django REST Framework untuk mengembalikan data dalam format JSON dan XML. Sediakan endpoint untuk koleksi dan untuk entitas berdasarkan ID, serta tangani kasus tidak ditemukan (return 404) dan error lainnya dengan try-except.
+
+- Pengujian (Postman / API client)
+Uji endpoint utama: GET /xml/, GET /json/, GET /xml/<id>/, GET /json/<id>/, serta operasi CRUD melalui form. Verifikasi status code, struktur respons, dan validasi input.
+
+- Keamanan dan persiapan deployment
+Pastikan semua form terlindungi CSRF, perbarui CSRF_TRUSTED_ORIGINS untuk domain produksi, lakukan validasi input pada server, dan konfigurasi static files, settings production, serta proses migrasi sebelum deploy. Kelola versi dengan Git (commit & push) secara teratur.
+
+![alt text](<Screenshot 2025-09-17 094045.png>)
+![alt text](<Screenshot 2025-09-17 094033.png>)
+![alt text](<Screenshot 2025-09-17 094006.png>)
+![alt text](<Screenshot 2025-09-17 093951.png>)
