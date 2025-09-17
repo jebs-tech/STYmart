@@ -34,6 +34,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "jenisa-bunga-stymart.pbp.cs.ui.ac.id"]
 
+CSRF_TRUSTED_ORIGINS = ["https://pbp.cs.ui.ac.id/jenisa.bunga/stymart"]
 
 # Application definition
 
@@ -62,7 +63,7 @@ ROOT_URLCONF = 'STYmart.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -135,6 +136,11 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
+
+# Media files (Uploaded by users)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media' 
+
 
 
 # Static files (CSS, JavaScript, Images)
