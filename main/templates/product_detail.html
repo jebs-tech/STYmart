@@ -31,6 +31,12 @@
 <!-- Description -->
 <p>{{ product.description }}</p>
 
+{% if product.user %}
+    <p>Seller: {{ product.user.username }}</p>
+{% else %}
+    <p>Seller: Anonymous</p>
+{% endif %}
+
 <!-- Delete button -->
 <p>
   <a href="{% url 'main:delete_product' product.pk %}" onclick="return confirm('Yakin mau hapus produk ini?')">
