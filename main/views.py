@@ -16,22 +16,19 @@ from django.urls import reverse
 # Create your views here.
 @login_required(login_url='/login')
 def show_main(request):
-    filter_type = request.GET.get("filter", "all")
+    filter_option = request.GET.get('filter', 'all')
 
-    if filter_type == "all":
-        product_list = Product.objects.all()
-    else:
+    if filter_option == 'my' and request.user.is_authenticated:
         product_list = Product.objects.filter(user=request.user)
+    else:
+        product_list = Product.objects.all()
 
-    product_list = Product.objects.all()
     context = {
-        'name': request.user.username,
-        'class': 'PBP F',
-        'product_list': product_list, 
-        'last_login': request.COOKIES.get('last_login', 'Never')
-
+        'product_list': product_list,
+        'last_login': request.COOKIES.get('last_login'),
     }
     return render(request, "main.html", context)
+
 
 def create_product(request):
     form = ProductForm(request.POST or None)
@@ -84,11 +81,6 @@ def show_json_by_id(request, Product_id):
    except Product.DoesNotExist:
        return HttpResponse(status=404)
    
-def delete_product(request, pk):
-    product = get_object_or_404(Product, pk=pk)
-    product.delete()
-    return redirect('main:show_main')
-
 def register(request):
     form = UserCreationForm()
 
@@ -123,6 +115,23 @@ def logout_user(request):
     response.delete_cookie('last_login')
     return response
 
+@login_required(login_url='/login')
+def edit_product(request, id):
+    product = get_object_or_404(Product, pk=id)
 
+    if request.method == "POST":
+        form = ProductForm(request.POST, instance=product)
+        if form.is_valid():
+            form.save()
+            return redirect("main:show_main")
+    else:
+        form = ProductForm(instance=product)
+
+    return render(request, "edit_product.html", {"form": form})
+
+def delete_product(request, id):
+    product = get_object_or_404(Product, pk=id)
+    product.delete()
+    return HttpResponseRedirect(reverse('main:show_main'))
 
 

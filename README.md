@@ -234,3 +234,59 @@ Filtering
 Di create_product(), set product_entry.user = request.user.
 Modifikasi show_main() untuk filter artikel berdasarkan user.
 Tambahkan tombol “All Product & “My Product".
+
+
+Tugas 4: 
+
+1. Prioritas CSS Selector
+
+Urutan prioritas:
+
+Inline style → tertinggi
+ID selector (#id)
+Class/pseudo-class/attribute (.class, :hover)
+Element selector (div, p)
+Universal selector (*) → terendah
+Contoh: <p id="main" class="text"> → ID menang, teks merah.
+
+2. Pentingnya Responsive Design
+
+Responsive membuat tampilan menyesuaikan layar. Penting untuk UX, aksesibilitas, dan SEO.
+Contoh responsive: Instagram, Tokopedia
+Contoh tidak responsive: website lama tahun 2005
+
+3. Margin, Border, Padding
+
+Margin: jarak di luar elemen
+Border: garis tepi elemen
+Padding: jarak antara konten dan border
+Contoh:
+.box { margin: 20px; border: 2px solid black; padding: 10px; }
+
+4. Flexbox & Grid Layout
+
+Flexbox: 1 dimensi, baris/kolom, cocok navbar/card.
+Grid: 2 dimensi, baris+kolom, cocok dashboard/gallery.
+Contoh Flexbox: display: flex; justify-content: space-between;
+Contoh Grid: display: grid; grid-template-columns: repeat(3,1fr); gap:10px;
+
+5. Implementasi Checklist Step-by-Step
+
+Kustomisasi halaman login & register
+    Tambahkan styling menarik menggunakan Tailwind CSS.
+    Gunakan form layout yang rapi, responsive, dan mobile-friendly.
+Kustomisasi halaman tambah & edit product
+    Buat form input lebih interaktif dan enak dilihat.
+    Gunakan card atau container agar form terlihat terstruktur.
+Kustomisasi halaman detail product
+    Tampilkan informasi product dengan jelas: nama, deskripsi, harga (format 299.900).
+    Tambahkan styling menarik agar detail terlihat profesional.
+Kustomisasi halaman daftar product
+    Jika belum ada product: tampilkan gambar + pesan “Belum ada product yang terdaftar”.
+    Jika ada product: buat card untuk tiap product (tidak sama persis dengan tutorial).
+    Setiap card memiliki dua button: Edit & Hapus product.
+Buat navigation bar (navbar) responsive
+    Navbar menyesuaikan tampilan desktop & mobile (hamburger menu untuk mobile).
+    Tambahkan link ke fitur-fitur utama: daftar product, tambah product, login/register, dsb.
+Testing & Finalisasi
+Pastikan semua halaman responsive, button berfungsi, dan card terlihat rapi di berbagai ukuran layar.
