@@ -2,56 +2,112 @@
 {% load static %}
 
 {% block meta %}
-<title>Edit Product - STY Mart Shin Tae Yong Mart</title>
+<title>Edit Product - STY Mart</title>
 {% endblock meta %}
 
 {% block content %}
-<div class="bg-gray-50 w-full min-h-screen">
-  <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    
-    <!-- Back Navigation -->
-    <div class="mb-6">
-      <a href="{% url 'main:show_main' %}" class="text-gray-600 hover:text-gray-900 font-medium transition-colors">
-        ← Back to Product
+<div class="bg-gray-100 min-h-screen py-10">
+  <div class="max-w-4xl mx-auto px-6">
+
+    <!-- Header -->
+    <div class="mb-8">
+      <a href="{% url 'main:show_main' %}" class="text-gray-500 hover:text-gray-900 font-medium transition-colors">
+        ← Back to Products
       </a>
+      <h1 class="text-3xl font-bold text-gray-900 mt-4">Edit Product</h1>
+      <p class="text-gray-600 mt-1">Update your product details below and see how it looks.</p>
     </div>
-    
-    <!-- Form -->
-    <div class="bg-white rounded-lg border border-gray-200 p-6 sm:p-8 form-style">
-      <div class="mb-8">
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">Edit Product</h1>
-        <p class="text-gray-600">Update your football product and stories</p>
-      </div>
-      
-      <form method="POST" class="space-y-6">
+
+    <!-- Form Container -->
+    <div class="bg-white rounded-xl shadow-md p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <form id="editProductForm" class="col-span-full space-y-6" enctype="multipart/form-data">
         {% csrf_token %}
+
+        <!-- Product Thumbnail Preview -->
+        {% if form.thumbnail.value %}
+        <div class="mb-4">
+          <p class="text-sm text-gray-500 mb-1">Current Thumbnail Preview:</p>
+          <img src="{{ form.thumbnail.value }}" alt="Thumbnail Preview" class="w-full h-48 object-cover rounded-md border border-gray-200">
+        </div>
+        {% endif %}
+
+        <!-- Form Fields -->
         {% for field in form %}
-          <div>
-            <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
-              {{ field.label }}
-            </label>
-            <div class="w-full">
-              {{ field }}
-            </div>
-            {% if field.help_text %}
-              <p class="mt-1 text-sm text-gray-500">{{ field.help_text }}</p>
-            {% endif %}
-            {% for error in field.errors %}
-              <p class="mt-1 text-sm text-red-600">{{ error }}</p>
-            {% endfor %}
-          </div>
+        <div>
+          <label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-1">{{ field.label }}</label>
+          {{ field }}
+          <p class="text-red-600 text-sm mt-1 hidden" id="error_{{ field.name }}"></p>
+          {% if field.help_text %}
+            <p class="text-gray-500 text-xs mt-1">{{ field.help_text }}</p>
+          {% endif %}
+        </div>
         {% endfor %}
-        
-        <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
-          <a href="{% url 'main:show_main' %}" class="order-2 sm:order-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-md font-medium hover:bg-gray-50 transition-colors text-center">
+
+        <!-- Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4 pt-4 border-t border-gray-200">
+          <a href="{% url 'main:show_main' %}" 
+             class="order-2 sm:order-1 px-5 py-2 border border-gray-300 text-gray-700 rounded-md font-medium hover:bg-gray-50 transition-colors text-center">
             Cancel
           </a>
-          <button type="submit" class="order-1 sm:order-2 flex-1 bg-green-600 text-white px-6 py-3 rounded-md font-medium hover:bg-green-700 transition-colors">
-            Update Product
+          <button type="submit" id="editProductBtn"
+                  class="order-1 sm:order-2 flex-1 bg-green-600 text-white px-6 py-2 rounded-md font-medium hover:bg-green-700 transition-colors">
+            Save Changes
           </button>
         </div>
       </form>
+
     </div>
   </div>
 </div>
+
+<script>
+const editForm = document.getElementById('editProductForm');
+const editBtn = document.getElementById('editProductBtn');
+
+function clearFieldErrors() {
+  document.querySelectorAll('.error-field').forEach(el => {
+    el.textContent = '';
+    el.classList.add('hidden');
+  });
+}
+
+
+editForm.addEventListener('submit', async function(e){
+  e.preventDefault();
+  clearFieldErrors();
+  editBtn.disabled = true;
+  editBtn.textContent = 'Saving...';
+
+  try {
+    const formData = new FormData(editForm);
+    const response = await fetch("{% url 'main:edit_product_ajax' product.id %}", {
+      method: 'POST',
+      body: formData,
+      headers: {'X-CSRFToken': csrftoken}
+    });
+    const data = await response.json();
+
+    if(data.status === 'success'){
+      showToast('Success', data.message, 'success');
+    } else if(data.status === 'error'){
+      showToast('Error', data.message || 'Failed to update product', 'error');
+      if(data.errors){
+        Object.keys(data.errors).forEach(field=>{
+          const el = document.getElementById(`error_${field}`);
+          if(el){ el.textContent = data.errors[field][0]; el.classList.remove('hidden'); }
+        });
+      }
+    } else {
+      showToast('Error', 'Unexpected server response', 'error');
+    }
+  } catch(err){
+    console.error(err);
+    showToast('Error', 'Network/server error. Try again.', 'error');
+  } finally {
+    editBtn.disabled = false;
+    editBtn.textContent = 'Save Changes';
+  }
+});
+</script>
 {% endblock %}

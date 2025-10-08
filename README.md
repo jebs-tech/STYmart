@@ -290,3 +290,47 @@ Buat navigation bar (navbar) responsive
     Tambahkan link ke fitur-fitur utama: daftar product, tambah product, login/register, dsb.
 Testing & Finalisasi
 Pastikan semua halaman responsive, button berfungsi, dan card terlihat rapi di berbagai ukuran layar.
+
+Tugas 5:
+
+1. Perbedaan antara Synchronous dan Asynchronous Request
+
+Synchronous request: halaman akan reload dan menunggu server merespons sebelum pengguna bisa berinteraksi lagi.
+
+Asynchronous request (AJAX): data dikirim dan diterima di latar belakang tanpa reload halaman, sehingga interaksi tetap berjalan.
+
+2. Cara Kerja AJAX di Django (Alur Request–Response)
+
+Pengguna melakukan aksi (misal klik tombol).
+
+JavaScript mengirim AJAX request ke URL Django (biasanya melalui views).
+
+Django memproses data dan mengembalikan JSON response.
+
+JavaScript menerima respons dan memperbarui tampilan halaman secara dinamis.
+
+3. Keuntungan AJAX dibanding Render Biasa
+
+Tidak perlu reload halaman → lebih cepat dan interaktif.
+
+Menghemat bandwidth karena hanya data yang berubah yang dikirim.
+
+Meningkatkan responsiveness aplikasi web.
+
+4. Keamanan AJAX untuk Login dan Register
+
+Gunakan CSRF token di setiap request AJAX.
+
+Validasi input di server-side (bukan hanya client-side).
+
+Gunakan HTTPS untuk mengenkripsi data sensitif.
+
+Batasi respons agar tidak membocorkan informasi error sensitif.
+
+5. Dampak AJAX terhadap User Experience
+
+Interaksi terasa lebih cepat dan halus tanpa page reload.
+
+Form dan tombol terasa lebih responsif.
+
+Meningkatkan kepuasan dan efisiensi pengguna dalam berinteraksi dengan website.
