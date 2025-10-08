@@ -236,7 +236,7 @@ Modifikasi show_main() untuk filter artikel berdasarkan user.
 Tambahkan tombol “All Product & “My Product".
 
 
-Tugas 4: 
+Tugas 5: 
 
 1. Prioritas CSS Selector
 
@@ -291,7 +291,7 @@ Buat navigation bar (navbar) responsive
 Testing & Finalisasi
 Pastikan semua halaman responsive, button berfungsi, dan card terlihat rapi di berbagai ukuran layar.
 
-Tugas 5:
+Tugas 6:
 
 1. Perbedaan antara Synchronous dan Asynchronous Request
 
