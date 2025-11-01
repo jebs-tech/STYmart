@@ -1,3 +1,4 @@
+
 {% extends 'base.html' %}
 {% load static %}
 {% block meta %}
@@ -19,10 +20,11 @@
     <!-- Create Button -->
     {% if user.is_authenticated %}
     <div class="flex justify-end mb-6">
-      <a href="{% url 'main:create_product_ajax' %}"
-         class="px-5 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium">
-        + Add Product
-      </a>
+    <button type="button" id="openAddModalBtn"
+    class="px-5 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium">
+    + Add Product
+    </button>
+
     </div>
     {% endif %}
 
@@ -39,20 +41,20 @@
     </div>
 
     <!-- Product Grid -->
-    {% if not product_list %}
+    {% if not products %}
       <div class="bg-white rounded-lg border border-gray-200 p-12 text-center">
         <img src="{% static 'image/no-news.png' %}" alt="No product available" class="w-32 h-32 mx-auto mb-4">
         <h3 class="text-lg font-medium text-gray-900 mb-2">No products found</h3>
         <p class="text-gray-500 mb-6">Be the first to share a product!</p>
         {% if user.is_authenticated %}
-        <a href="{% url 'main:create_product_ajax' %}" class="px-5 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium">
+        <a href="{% url 'main:add_products_entry_ajax' %}" class="px-5 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium">
           Create Product
         </a>
         {% endif %}
       </div>
     {% else %}
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% for product in product_list %}
+        {% for product in products %}
           {% include 'card_product.html' with product=product %}
         {% endfor %}
       </div>
@@ -60,4 +62,405 @@
 
   </div>
 </div>
+<div id="addProductModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-40 flex items-center justify-center p-4">
+  <div class="relative top-10 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-xl bg-white z-50">
+    
+    <div class="flex justify-between items-center pb-3 border-b mb-4">
+      <h3 class="text-2xl font-bold text-gray-900">Add a New Product</h3>
+      <button id="closeAddModalBtn" class="text-gray-400 hover:text-gray-600 text-3xl font-bold">&times;</button>
+    </div>
+    
+    <div class="py-4 max-h-[70vh] overflow-y-auto">
+      <form id="ProductForm" 
+        class="grid grid-cols-1 md:grid-cols-2 gap-6" 
+        method="POST" 
+        action="{% url 'main:create_product' %}" 
+        enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="col-span-full">
+          <label for="id_name" class="block text-sm font-semibold text-gray-700 mb-1">Name</label>
+          <input type="text" name="name" id="id_name" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500" required>
+          <p class="text-red-600 text-sm mt-1 hidden" id="error_name"></p>
+        </div>
+
+        <div>
+          <label for="id_category" class="block text-sm font-semibold text-gray-700 mb-1">Category</label>
+          <input type="text" name="category" id="id_category" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500" required>
+          <p class="text-red-600 text-sm mt-1 hidden" id="error_category"></p>
+          <datalist id="category-datalist">
+            {% for category in all_categories %}
+              <option value="{{ category }}">
+            {% endfor %}
+          </datalist>
+        </div>
+
+        <div>
+          <label for="id_price" class="block text-sm font-semibold text-gray-700 mb-1">Price</label>
+          <input type="number" name="price" id="id_price" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500" required>
+          <p class="text-red-600 text-sm mt-1 hidden" id="error_price"></p>
+        </div>
+
+        <div>
+          <label for="id_stock" class="block text-sm font-semibold text-gray-700 mb-1">Stock</label>
+          <input type="number" name="stock" id="id_stock" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500" required>
+          <p class="text-red-600 text-sm mt-1 hidden" id="error_stock"></p>
+        </div>
+
+        <div>
+          <label for="id_color" class="block text-sm font-semibold text-gray-700 mb-1">Color</label>
+          <input type="text" name="color" id="id_color" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500">
+          <datalist id="color-datalist">
+            {% for color in all_colors %}
+              {% if color %}<option value="{{ color }}">{% endif %}
+            {% endfor %}
+          </datalist>
+        </div>
+
+        <div>
+          <label for="id_size" class="block text-sm font-semibold text-gray-700 mb-1">Size</label>
+          <input type="text" name="size" id="id_size" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500">
+          <datalist id="size-datalist">
+            {% for size in all_sizes %}
+              {% if size %}<option value="{{ size }}">{% endif %}
+            {% endfor %}
+          </datalist>
+        </div>
+
+        <div class="col-span-full">
+          <label for="id_thumbnail" class="block text-sm font-semibold text-gray-700 mb-1">Thumbnail URL</label>
+          <input type="url" name="thumbnail" id="id_thumbnail" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500">
+        </div>
+
+        <div class="col-span-full">
+          <label for="id_description" class="block text-sm font-semibold text-gray-700 mb-1">Description</label>
+          <textarea name="description" id="id_description" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500"></textarea>
+        </div>
+
+        <div class="col-span-full flex space-x-6 items-center">
+          <div class="flex items-center">
+            <input type="checkbox" name="promo" id="id_promo" class="h-4 w-4 text-green-600 border-gray-300 rounded">
+            <label for="id_promo" class="ml-2 text-gray-700 font-medium">Promo</label>
+          </div>
+          <div class="flex items-center">
+            <input type="checkbox" name="is_featured" id="id_is_featured" class="h-4 w-4 text-green-600 border-gray-300 rounded">
+            <label for="id_is_featured" class="ml-2 text-gray-700 font-medium">Featured</label>
+          </div>
+        </div>
+
+        <div class="col-span-full flex justify-end gap-4 pt-4 border-t border-gray-200">
+          <button type="button" id="cancelAddModalBtn"
+             class="px-5 py-2 border border-gray-300 text-gray-700 rounded-md font-medium hover:bg-gray-50 transition-colors">
+            Cancel
+          </button>
+          <button type="submit" id="createProductBtn"
+                  class="px-6 py-2 bg-green-600 text-white rounded-md font-medium hover:bg-green-700 transition-colors">
+            Publish Product
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+</div> <div id="editProductModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-40 flex items-center justify-center p-4">
+  <div class="relative p-5 border w-full max-w-4xl shadow-lg rounded-xl bg-white z-50">
+    
+    <div class="flex justify-between items-center pb-3 border-b mb-4">
+      <h3 class="text-2xl font-bold text-gray-900">Edit Product</h3>
+      <button id="closeEditModalBtn" class="text-gray-400 hover:text-gray-600 text-3xl font-bold">&times;</button>
+    </div>
+    
+    <div class="py-4 max-h-[70vh] overflow-y-auto">
+      <form id="editProductForm" 
+        class="grid grid-cols-1 md:grid-cols-2 gap-6" 
+        method="POST" 
+        action=""> {% csrf_token %}
+
+        <div class="col-span-full">
+          <label for="id_name_edit" class="block text-sm font-semibold text-gray-700 mb-1">Name</label>
+          <input type="text" name="name" id="id_name_edit" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500" required>
+          <p class="text-red-600 text-sm mt-1 hidden" id="error_name_edit"></p>
+        </div>
+
+        <div>
+          <label for="id_category_edit" class="block text-sm font-semibold text-gray-700 mb-1">Category</label>
+          <input type="text" name="category" id="id_category_edit" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500" required list="category-datalist">
+          <p class="text-red-600 text-sm mt-1 hidden" id="error_category_edit"></p>
+          <datalist id="category-datalist">
+            {% for category in all_categories %}
+              <option value="{{ category }}">
+            {% endfor %}
+          </datalist>
+        </div>
+
+        <div>
+          <label for="id_price_edit" class="block text-sm font-semibold text-gray-700 mb-1">Price</label>
+          <input type="number" name="price" id="id_price_edit" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500" required>
+          <p class="text-red-600 text-sm mt-1 hidden" id="error_price_edit"></p>
+        </div>
+
+        <div>
+          <label for="id_stock_edit" class="block text-sm font-semibold text-gray-700 mb-1">Stock</label>
+          <input type="number" name="stock" id="id_stock_edit" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500" required>
+          <p class="text-red-600 text-sm mt-1 hidden" id="error_stock_edit"></p>
+        </div>
+
+        <div>
+          <label for="id_color_edit" class="block text-sm font-semibold text-gray-700 mb-1">Color</label>
+          <input type="text" name="color" id="id_color_edit" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500" list="color-datalist">
+          <datalist id="color-datalist">
+            {% for color in all_colors %}
+              {% if color %}<option value="{{ color }}">{% endif %}
+            {% endfor %}
+          </datalist>
+        </div>
+
+        <div>
+          <label for="id_size_edit" class="block text-sm font-semibold text-gray-700 mb-1">Size</label>
+          <input type="text" name="size" id="id_size_edit" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500" list="size-datalist">
+          <datalist id="size-datalist">
+            {% for size in all_sizes %}
+              {% if size %}<option value="{{ size }}">{% endif %}
+            {% endfor %}
+          </datalist>
+        </div>
+
+        <div class="col-span-full">
+          <label for="id_thumbnail_edit" class="block text-sm font-semibold text-gray-700 mb-1">Thumbnail URL</label>
+          <input type="url" name="thumbnail" id="id_thumbnail_edit" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500">
+        </div>
+
+        <div class="col-span-full">
+          <label for="id_description_edit" class="block text-sm font-semibold text-gray-700 mb-1">Description</label>
+          <textarea name="description" id="id_description_edit" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-green-500"></textarea>
+        </div>
+
+        <div class="col-span-full flex space-x-6 items-center">
+          <div class="flex items-center">
+            <input type="checkbox" name="promo" id="id_promo_edit" class="h-4 w-4 text-green-600 border-gray-300 rounded">
+            <label for="id_promo_edit" class="ml-2 text-gray-700 font-medium">Promo</label>
+          </div>
+          <div class="flex items-center">
+            <input type="checkbox" name="is_featured" id="id_is_featured_edit" class="h-4 w-4 text-green-600 border-gray-300 rounded">
+            <label for="id_is_featured_edit" class="ml-2 text-gray-700 font-medium">Featured</label>
+          </div>
+        </div>
+
+        <div class="col-span-full flex justify-end gap-4 pt-4 border-t border-gray-200">
+          <button type="button" id="cancelEditModalBtn"
+             class="px-5 py-2 border border-gray-300 text-gray-700 rounded-md font-medium hover:bg-gray-50 transition-colors">
+            Cancel
+          </button>
+          <button type="submit" id="saveEditModalBtn"
+                  class="px-6 py-2 bg-green-600 text-white rounded-md font-medium hover:bg-green-700 transition-colors">
+            Save Changes
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+// ---------------------------------
+// BAGIAN 1: SCRIPT AJAX DARI create_product.html
+// ---------------------------------
+
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== "") {
+    const cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + "=")) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+if (typeof showToast === 'undefined') {
+  function showToast(title, message, type='normal', duration=3000) {
+    let toast = document.getElementById('toast-component-temp');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'toast-component-temp';
+      toast.style.position = 'fixed';
+      toast.style.right = '1rem';
+      toast.style.bottom = '1rem';
+      toast.style.zIndex = 9999;
+      toast.style.color = '#fff';
+      toast.style.padding = '0.6rem 1rem';
+      toast.style.borderRadius = '0.5rem';
+      toast.style.boxShadow = '0 4px 10px rgba(0,0,0,0.1)';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = title + ': ' + message;
+    toast.style.background = type === 'success' ? '#16a34a' : type === 'error' ? '#dc2626' : '#374151';
+    toast.style.display = 'block';
+    setTimeout(() => { toast.style.display = 'none'; }, duration);
+  }
+}
+
+const createForm = document.getElementById('ProductForm');
+const createBtn = document.getElementById('createProductBtn');
+
+function clearFieldErrors() {
+  ['name','category','price','stock'].forEach(field => {
+    const el = document.getElementById(`error_${field}`);
+    if (el) { el.textContent = ''; el.classList.add('hidden'); }
+  });
+}
+
+createForm.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  clearFieldErrors();
+  createBtn.disabled = true;
+  createBtn.textContent = 'Publishing...';
+
+  try {
+    const formData = new FormData(createForm);
+
+    const promoEl = document.getElementById('id_promo');
+    const featuredEl = document.getElementById('id_is_featured');
+    formData.set('promo', promoEl && promoEl.checked ? 'true' : 'false');
+    formData.set('is_featured', featuredEl && featuredEl.checked ? 'true' : 'false');
+
+    const csrftoken = createForm.querySelector('input[name="csrfmiddlewaretoken"]')?.value || getCookie('csrftoken');
+
+    const response = await fetch("{% url 'main:add_products_entry_ajax' %}", {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-CSRFToken': csrftoken,
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    });
+
+    if (response.status === 403) {
+      showToast('Error', 'CSRF failure or not authenticated', 'error', 5000);
+      return;
+    }
+
+    const ct = response.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) {
+      const text = await response.text();
+      showToast('Error', 'Unexpected server response. See console for details.', 'error', 5000);
+      console.error('Unexpected server response:', response.status, text);
+      return;
+    }
+
+    const data = await response.json();
+
+    if (data && data.status === 'success') {
+      showToast('Success', data.message || 'Product created', 'success');
+      createForm.reset();
+      document.getElementById('addProductModal').classList.add('hidden');
+      window.location.reload();
+    } else if (data && data.status === 'error') {
+      showToast('Error', data.message || 'Failed to create product', 'error');
+      if (data.errors) {
+        Object.keys(data.errors).forEach(field => {
+          const el = document.getElementById(`error_${field}`);
+          if (el) {
+            el.textContent = Array.isArray(data.errors[field]) ? data.errors[field][0] : data.errors[field];
+            el.classList.remove('hidden');
+          }
+        });
+      }
+    } else {
+      showToast('Error', 'Unexpected server response', 'error');
+      console.error('Unexpected JSON response:', data);
+    }
+  } catch (err) {
+    console.error(err);
+    showToast('Error', 'Network/server error. Try again.', 'error');
+  } finally {
+    createBtn.disabled = false;
+    createBtn.textContent = 'Publish Product';
+  }
+});
+
+// ---------------------------------
+// BAGIAN 2: SCRIPT UNTUK KONTROL MODAL
+// ---------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+  
+  const addModal = document.getElementById('addProductModal');
+  const openAddBtn = document.getElementById('openAddModalBtn');
+  const closeAddBtn = document.getElementById('closeAddModalBtn');
+  const cancelAddBtn = document.getElementById('cancelAddModalBtn');
+
+  const showModal = () => addModal.classList.remove('hidden');
+  const hideModal = () => {
+      addModal.classList.add('hidden');
+      if (window.createForm) createForm.reset(); 
+      if (window.clearFieldErrors) clearFieldErrors(); 
+  }
+  
+  const editModal = document.getElementById('editProductModal');
+  const editForm = document.getElementById('editProductForm'); 
+  const closeEditBtn = document.getElementById('closeEditModalBtn');
+  const cancelEditBtn = document.getElementById('cancelEditModalBtn');
+  
+  const clearEditFieldErrors = window.clearEditFieldErrors || function() {
+    document.querySelectorAll('p[id^="error_"][id$="_edit"]').forEach(el => {
+      el.textContent = '';
+      el.classList.add('hidden');
+    });
+  };
+
+  const hideEditModal = () => {
+      editModal.classList.add('hidden');
+      if (editForm) editForm.reset(); 
+      clearEditFieldErrors(); 
+  }
+
+  if (openAddBtn) openAddBtn.addEventListener('click', showModal);
+  if (closeAddBtn) closeAddBtn.addEventListener('click', hideModal);
+  if (cancelAddBtn) cancelAddBtn.addEventListener('click', hideModal);
+
+  addModal.addEventListener('click', (e) => {
+    if (e.target === addModal) hideModal();
+  });
+
+  if (closeEditBtn) closeEditBtn.addEventListener('click', hideEditModal);
+  if (cancelEditBtn) cancelEditBtn.addEventListener('click', hideEditModal);
+
+  editModal.addEventListener('click', (e) => {
+    if (e.target === editModal) hideEditModal();
+  });
+
+  document.body.addEventListener('click', (e) => {
+      if (e.target && e.target.classList.contains('open-edit-modal-btn')) {
+          const btn = e.target;
+          const data = btn.dataset;
+
+          if (!editForm) {
+              console.error('Edit form (editProductForm) not found!');
+              return;
+          }
+
+          editForm.setAttribute('action', data.url);
+
+          editForm.querySelector('#id_name_edit').value = data.name;
+          editForm.querySelector('#id_category_edit').value = data.category;
+          editForm.querySelector('#id_price_edit').value = data.price;
+          editForm.querySelector('#id_stock_edit').value = data.stock;
+          editForm.querySelector('#id_color_edit').value = data.color;
+          editForm.querySelector('#id_size_edit').value = data.size;
+          editForm.querySelector('#id_thumbnail_edit').value = data.thumbnail;
+          editForm.querySelector('#id_description_edit').value = data.description;
+          
+          editForm.querySelector('#id_promo_edit').checked = (data.promo === 'true');
+          editForm.querySelector('#id_is_featured_edit').checked = (data.featured === 'true');
+          
+          if (editModal) editModal.classList.remove('hidden');
+      }
+  });
+});
+</script>
 {% endblock %}

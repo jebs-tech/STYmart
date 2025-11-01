@@ -1,231 +1,255 @@
-import datetime
-from django.shortcuts import render, get_object_or_404
-from django.http import JsonResponse, HttpResponseRedirect
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse, HttpResponse, HttpResponseNotAllowed
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from django.contrib.auth import login, logout
-from django.contrib import messages
+from django.core import serializers
+from .forms import ProductForm
+from .models import Product
+from decimal import Decimal
 
-from main.models import Product
-from main.forms import ProductForm
 
-# ----------------- MAIN -----------------
-@login_required(login_url='/login')
+
+# ---------- Normal Page Views ---------- #
+
+@login_required(login_url='/login/')
 def show_main(request):
-    filter_type = request.GET.get("filter", "all")
-    if filter_type == "my":
-        product_list = Product.objects.filter(user=request.user)
+    filter_by = request.GET.get('filter', 'my') 
+    if filter_by == 'all':
+        products = Product.objects.all()
     else:
-        product_list = Product.objects.all()
-
+        products = Product.objects.filter(user=request.user)
     context = {
-        "app_name": "STYMart",
-        "npm": "2406431334",
-        "name": request.user.username,
-        "class": "PBP F",
-        "product_list": product_list,
-        "last_login": request.COOKIES.get('last_login', 'Never')
+        'products': products,
     }
-    return render(request, "main.html", context)
+    context.update(get_product_choices())
+    return render(request, 'main.html', context)
 
-@login_required(login_url='/login')
-def create_product(request):
-    form = ProductForm(request.POST or None)
 
-    if form.is_valid() and request.method == 'POST':
-        product_entry = form.save(commit=False)
-        product_entry.user = request.user
-        product_entry.save()
-        return redirect('main:show_main')
-
-    context = {
-        'form': form
-    }
-
-    return render(request, "create_product.html", context)
-
-@login_required(login_url='/login')
+@login_required(login_url='/login/')
 def show_product(request, id):
     product = get_object_or_404(Product, pk=id)
+    return render(request, 'product_detail.html', {'product': product})
 
-    context = {
-        'product': product
-    }
+@login_required(login_url='/login/')
+def create_product(request):
+    if request.method == "POST":
+        form = ProductForm(request.POST)
+        
+        if form.is_valid():
+            product = form.save(commit=False)
+            product.user = request.user
+            
+            product.save()
+            
+            return redirect('main:show_main')
+        else:
+            return render(request, 'create_product.html')
 
-    return render(request, "product_detail.html", context)
+    context = get_product_choices()
+    return render(request, 'create_product.html')
 
-# ----------------- AUTH -----------------
+
+@login_required(login_url='/login/')
+def edit_product(request, id):
+    product = get_object_or_404(Product, pk=id, user=request.user)
+    
+    if request.method == "POST":
+        form = ProductForm(request.POST, instance=product)
+        
+        if form.is_valid():
+            form.save() 
+            return redirect('main:show_main')
+        else:
+            return render(request, 'edit_product.html', {'product': product, 'form': form})
+            
+    form = ProductForm(instance=product)
+    
+    return render(request, 'edit_product.html', {'product': product, 'form': form})
+
+
+@login_required(login_url='/login/')
+def delete_product(request, id):
+    product = get_object_or_404(Product, pk=id, user=request.user)
+    product.delete()
+    return redirect('main:show_main')
+
+
+# ---------- Data Views (JSON/XML) ---------- #
+
+def show_json(request):
+    data = Product.objects.all()
+    return HttpResponse(serializers.serialize("json", data), content_type="application/json")
+
+def show_json_by_id(request, product_id):
+    data = Product.objects.filter(pk=product_id)
+    return HttpResponse(serializers.serialize("json", data), content_type="application/json")
+
+def show_xml(request):
+    data = Product.objects.all()
+    return HttpResponse(serializers.serialize("xml", data), content_type="application/xml")
+
+def show_xml_by_id(request, product_id):
+    data = Product.objects.filter(pk=product_id)
+    return HttpResponse(serializers.serialize("xml", data), content_type="application/xml")
+
+
+# ---------- Auth Views (Normal) ---------- #
+
 def register(request):
+    form = UserCreationForm()
     if request.method == "POST":
         form = UserCreationForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Your account has been successfully created!')
-            return redirect('main:login')
-    else:
-        form = UserCreationForm()
-    return render(request, 'register.html', {"form": form})
+            return redirect("main:login_user")
+    return render(request, "register.html", {"form": form})
 
 
 def login_user(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         form = AuthenticationForm(data=request.POST)
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            response = HttpResponseRedirect('/main/')
-            response.set_cookie('last_login', str(datetime.datetime.now()))
-            return response
+            return redirect("main:show_main")
     else:
         form = AuthenticationForm()
-    return render(request, 'login.html', {"form": form})
+    return render(request, "login.html", {"form": form})
 
 
 def logout_user(request):
     logout(request)
-    response = HttpResponseRedirect('/login/')
-    response.delete_cookie('last_login')
-    return response
+    return redirect("main:login_user")
+
+@login_required(login_url='/login/')
+def add_products_entry_ajax(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({
+            "status": "error", 
+            "message": "User not authenticated."
+        }, status=401)
+
+    if request.method == 'POST':
+        form = ProductForm(request.POST)
+
+        if form.is_valid():
+            product = form.save(commit=False)
+            product.user = request.user
+            product.save()
+            return JsonResponse({
+                "status": "success",
+                "message": f"Product '{product.name}' created successfully!",
+                "id": product.id
+            })
+        else:
+            return JsonResponse({
+                "status": "error",
+                "message": "Form data is invalid.",
+                "errors": form.errors
+            }, status=400)
+
+    return JsonResponse({
+        "status": "error",
+        "message": "Invalid request method."
+    }, status=400)
 
 
-# ----------------- AJAX CRUD -----------------
 @csrf_exempt
-@require_POST
-@login_required(login_url='/login')
-def create_product_ajax(request):
-    """Create new product via AJAX"""
-    name = request.POST.get('name')
-    price = request.POST.get('price', 0)
-    description = request.POST.get('description', '')
-    stock = request.POST.get('stock', 0)
-    category = request.POST.get('category', '')
-    thumbnail = request.POST.get('thumbnail', '')
-    color = request.POST.get('color', '')
-    size = request.POST.get('size', '')
-    is_featured = request.POST.get('is_featured') == 'on'
-
+@login_required(login_url='/login/')
+def update_product_ajax(request, id):
+    if not request.user.is_authenticated:
+        return JsonResponse({"status": "error", "message": "User not authenticated."}, status=401)
     try:
-        price = float(price)
-        stock = int(stock)
-    except ValueError:
-        return JsonResponse({'error': 'Invalid numeric input'}, status=400)
+        product = Product.objects.get(pk=id, user=request.user)
+    except Product.DoesNotExist:
+        return JsonResponse({"status": "error", "message": "Not found."}, status=404)
 
-    product = Product.objects.create(
-        name=name,
-        price=price,
-        description=description,
-        stock=stock,
-        category=category,
-        thumbnail=thumbnail,
-        color=color,
-        size=size,
-        is_featured=is_featured,
-        user=request.user
-    )
+    if request.method == 'POST':
+        form = ProductForm(request.POST, instance=product)
 
-    return JsonResponse({'status': 'created', 'product_id': product.id}, status=201)
+        if form.is_valid():
+            form.save()
+            
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({
+                    "status": "success",
+                    "message": f"Product '{product.name}' updated successfully!"
+                })
+            else:
+                return redirect('main:show_main')
+        else:
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({
+                    "status": "error",
+                    "message": "Form data is invalid.",
+                    "errors": form.errors
+                }, status=400)
+            else:
+                return render(request, 'edit_product.html', {'product': product, 'form': form})
 
-
-@csrf_exempt
-@require_POST
-@login_required(login_url='/login')
-def edit_product_ajax(request, product_id):
-    """Edit product via AJAX"""
-    product = get_object_or_404(Product, pk=product_id)
-
-    if product.user != request.user:
-        return JsonResponse({'error': 'Unauthorized'}, status=403)
-
-    name = request.POST.get('name', product.name)
-    price = request.POST.get('price', product.price)
-    description = request.POST.get('description', product.description)
-    stock = request.POST.get('stock', product.stock)
-    category = request.POST.get('category', product.category)
-    thumbnail = request.POST.get('thumbnail', product.thumbnail)
-    color = request.POST.get('color', product.color)
-    size = request.POST.get('size', product.size)
-    is_featured = request.POST.get('is_featured') == 'on'
-
-    try:
-        price = float(price)
-        stock = int(stock)
-    except ValueError:
-        return JsonResponse({'error': 'Invalid numeric input'}, status=400)
-
-    product.name = name
-    product.price = price
-    product.description = description
-    product.stock = stock
-    product.category = category
-    product.thumbnail = thumbnail
-    product.color = color
-    product.size = size
-    product.is_featured = is_featured
-    product.save()
-
-    return JsonResponse({'status': 'updated', 'product_id': product.id}, status=200)
+    # Jika bukan POST
+    return JsonResponse({
+        "status": "error",
+        "message": "Invalid request method."
+    }, status=400)
 
 
 @csrf_exempt
-@require_POST
-@login_required(login_url='/login')
-def delete_product_ajax(request, product_id):
-    """Delete product via AJAX"""
-    product = get_object_or_404(Product, pk=product_id)
-
-    if product.user != request.user:
-        return JsonResponse({'error': 'Unauthorized'}, status=403)
-
-    product.delete()
-    return JsonResponse({'status': 'deleted', 'product_id': product_id}, status=200)
+def delete_product_ajax(request, id):
+    if request.method == "POST":
+        product = get_object_or_404(Product, pk=id)
+        product.delete()
+        return JsonResponse({"status": "deleted"})
+    return HttpResponseNotAllowed(['POST'])
 
 
-# ----------------- JSON Endpoint -----------------
-@login_required(login_url='/login')
-def show_json_by_id(request):
-    """List all products as JSON (with optional filter=my)"""
-    filter_type = request.GET.get("filter", "all")
-    if filter_type == "my":
-        products = Product.objects.filter(user=request.user)
-    else:
-        products = Product.objects.all()
+# ---------- AJAX Auth Views ---------- #
 
-    data = [
-        {
-            'id': p.id,
-            'name': p.name,
-            'price': float(p.price) if p.price else 0,
-            'description': p.description,
-            'stock': p.stock,
-            'category': p.category,
-            'thumbnail': p.thumbnail,
-            'color': p.color,
-            'size': p.size,
-            'is_featured': p.is_featured,
-            'user_id': p.user.id if p.user else None,
-            'user_username': p.user.username if p.user else None,
-        }
-        for p in products
-    ]
+@csrf_exempt
+def login_ajax(request):
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return JsonResponse({"status": "success"})
+        return JsonResponse({"status": "failed"})
+    return HttpResponseNotAllowed(['POST'])
 
-    return JsonResponse(data, safe=False)
 
-def show_xml(request):
-     product_list = Product.objects.all()
-     xml_data = serializers.serialize("xml", product_list)
-     return HttpResponse(xml_data, content_type="application/xml")
+@csrf_exempt
+def register_ajax(request):
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
+        if not username or not password:
+            return JsonResponse({"status": "error", "message": "Invalid input"})
+        user = UserCreationForm({'username': username, 'password1': password, 'password2': password})
+        if user.is_valid():
+            user.save()
+            return JsonResponse({"status": "success"})
+        return JsonResponse({"status": "failed", "errors": user.errors})
+    return HttpResponseNotAllowed(['POST'])
 
-def show_json(request):
-    product_list = Product.objects.all()
-    json_data = serializers.serialize("json", product_list)
-    return HttpResponse(json_data, content_type="application/json")
 
-def show_xml_by_id(request, product_id):
-   try:
-       product_item = Product.objects.filter(pk=product_id)
-       xml_data = serializers.serialize("xml", product_item)
-       return HttpResponse(xml_data, content_type="application/xml")
-   except Product.DoesNotExist:
-       return HttpResponse(status=404)
+@csrf_exempt
+def logout_ajax(request):
+    if request.method == "POST":
+        logout(request)
+        return JsonResponse({"status": "logged_out"})
+    return HttpResponseNotAllowed(['POST'])
+
+# ---------- Helper Cart View ---------- #
+@login_required(login_url='/login/')
+def add_to_cart(request, id):
+    return redirect('main:show_product', id=id)
+
+def get_product_choices():
+    return {
+        'all_categories': list(Product.objects.values_list('category', flat=True).distinct().order_by('category')),
+        'all_colors': list(Product.objects.values_list('color', flat=True).distinct().order_by('color')),
+        'all_sizes': list(Product.objects.values_list('size', flat=True).distinct().order_by('size')),
+    }

@@ -7,7 +7,8 @@ class ProductForm(forms.ModelForm):
         fields = [
             "name", "category", "price", "stock",
             "color", "size", "thumbnail",
-            "description", "promo"
+            "description", "promo",
+            "is_featured" 
         ]
         labels = {
             "promo": "Promo Product",
@@ -16,15 +17,6 @@ class ProductForm(forms.ModelForm):
         widgets = {
             "name": forms.TextInput(attrs={
                 "placeholder": 'Masukkan nama produk, contoh: "Adidas Predator 2025"',
-                "class": "w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:ring-green-500 focus:border-green-500"
-            }),
-            "category": forms.Select(attrs={
-                "class": "w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:ring-green-500 focus:border-green-500"
-            }),
-            "color": forms.Select(attrs={
-                "class": "w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:ring-green-500 focus:border-green-500"
-            }),
-            "size": forms.Select(attrs={
                 "class": "w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:ring-green-500 focus:border-green-500"
             }),
             "thumbnail": forms.URLInput(attrs={
@@ -41,7 +33,6 @@ class ProductForm(forms.ModelForm):
             }),
         }
 
-    # Ganti IntegerField ke DecimalField supaya sesuai model
     price = forms.DecimalField(
         min_value=0,
         max_digits=10,
@@ -59,3 +50,29 @@ class ProductForm(forms.ModelForm):
             "class": "w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:ring-green-500 focus:border-green-500"
         })
     )
+
+    def __init__(self, *args, **kwargs):
+        super(ProductForm, self).__init__(*args, **kwargs)
+        
+        common_attrs = {
+            'class': 'w-full border border-gray-300 rounded-md shadow-sm px-3 py-2 focus:ring-green-500 focus:border-green-500',
+        }
+        
+        self.fields['category'].widget = forms.TextInput(attrs={
+            **common_attrs, 'placeholder': 'Pilih atau ketik kategori baru', 'list': 'category-datalist'
+        })
+        self.fields['color'].widget = forms.TextInput(attrs={
+            **common_attrs, 'placeholder': 'Pilih atau ketik warna baru', 'list': 'color-datalist'
+        })
+        self.fields['size'].widget = forms.TextInput(attrs={
+            **common_attrs, 'placeholder': 'Pilih atau ketik ukuran baru', 'list': 'size-datalist'
+        })
+
+        self.fields['category'].widget.datalist_id = 'category-datalist'
+        self.fields['category'].widget.datalist = list(Product.objects.values_list('category', flat=True).distinct().order_by('category'))
+        
+        self.fields['color'].widget.datalist_id = 'color-datalist'
+        self.fields['color'].widget.datalist = list(Product.objects.values_list('color', flat=True).distinct().order_by('color'))
+
+        self.fields['size'].widget.datalist_id = 'size-datalist'
+        self.fields['size'].widget.datalist = list(Product.objects.values_list('size', flat=True).distinct().order_by('size'))

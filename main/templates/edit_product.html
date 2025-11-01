@@ -1,3 +1,4 @@
+
 {% extends 'base.html' %}
 {% load static %}
 
@@ -36,7 +37,13 @@
         {% for field in form %}
         <div>
           <label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-gray-700 mb-1">{{ field.label }}</label>
-          {{ field }}
+          {{ field }} {% if field.widget.datalist_id %}
+            <datalist id="{{ field.widget.datalist_id }}">
+              {% for item in field.widget.datalist %}
+                {% if item %}<option value="{{ item }}">{% endif %}
+              {% endfor %}
+            </datalist>
+          {% endif %}
           <p class="text-red-600 text-sm mt-1 hidden" id="error_{{ field.name }}"></p>
           {% if field.help_text %}
             <p class="text-gray-500 text-xs mt-1">{{ field.help_text }}</p>
@@ -62,16 +69,30 @@
 </div>
 
 <script>
-const editForm = document.getElementById('editProductForm');
-const editBtn = document.getElementById('editProductBtn');
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== "") {
+    const cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + "=")) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
 
 function clearFieldErrors() {
-  document.querySelectorAll('.error-field').forEach(el => {
+  document.querySelectorAll('p[id^="error_"]').forEach(el => {
     el.textContent = '';
     el.classList.add('hidden');
   });
 }
 
+const editForm = document.getElementById('editProductForm');
+const editBtn = document.getElementById('editProductBtn');
 
 editForm.addEventListener('submit', async function(e){
   e.preventDefault();
@@ -81,29 +102,53 @@ editForm.addEventListener('submit', async function(e){
 
   try {
     const formData = new FormData(editForm);
-    const response = await fetch("{% url 'main:edit_product_ajax' product.id %}", {
+    const csrftoken = editForm.querySelector('input[name="csrfmiddlewaretoken"]')?.value || getCookie('csrftoken');
+
+    const response = await fetch("{% url 'main:update_product_ajax' product.id %}", {
       method: 'POST',
       body: formData,
-      headers: {'X-CSRFToken': csrftoken}
+      headers: {
+          'X-CSRFToken': csrftoken,
+          'X-Requested-With': 'XMLHttpRequest'
+      }
     });
+
+    const ct = response.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) {
+      const text = await response.text();
+      if (window.showToast) window.showToast('Error', 'Unexpected server response. See console.', 'error');
+      else console.log('Error', 'Unexpected server response. See console.', text);
+      return;
+    }
+
     const data = await response.json();
 
     if(data.status === 'success'){
-      showToast('Success', data.message, 'success');
+      if (window.showToast) window.showToast('Success', data.message || 'Product updated!', 'success');
+      else console.log('Success', data.message || 'Product updated!');
+      window.location.href = "{% url 'main:show_main' %}";
+    
     } else if(data.status === 'error'){
-      showToast('Error', data.message || 'Failed to update product', 'error');
+      if (window.showToast) window.showToast('Error', data.message || 'Failed to update product', 'error');
+      else console.log('Error', data.message || 'Failed to update product');
+
       if(data.errors){
         Object.keys(data.errors).forEach(field=>{
           const el = document.getElementById(`error_${field}`);
-          if(el){ el.textContent = data.errors[field][0]; el.classList.remove('hidden'); }
+          if(el){ 
+            el.textContent = Array.isArray(data.errors[field]) ? data.errors[field][0] : data.errors[field];
+            el.classList.remove('hidden'); 
+          }
         });
       }
     } else {
-      showToast('Error', 'Unexpected server response', 'error');
+      if (window.showToast) window.showToast('Error', 'Unexpected server response', 'error');
+      else console.log('Error', 'Unexpected server response');
     }
   } catch(err){
     console.error(err);
-    showToast('Error', 'Network/server error. Try again.', 'error');
+    if (window.showToast) window.showToast('Error', 'Network/server error. Try again.', 'error');
+    else console.log('Error', 'Network/server error. Try again.');
   } finally {
     editBtn.disabled = false;
     editBtn.textContent = 'Save Changes';
